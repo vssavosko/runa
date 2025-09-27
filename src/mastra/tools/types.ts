@@ -1,0 +1,20 @@
+import type { Endpoints } from "@octokit/types";
+
+export type PullRequestFileType =
+  Endpoints["GET /repos/{owner}/{repo}/pulls/{pull_number}/files"]["response"]["data"][0];
+
+export type IssueCommentType =
+  Endpoints["GET /repos/{owner}/{repo}/issues/{issue_number}/comments"]["response"]["data"][0];
+
+export type PullRequestDataType = {
+  repositoryFullName: string;
+  pullRequestNumber: number;
+
+  body?: string;
+};
+
+export type ApiErrorHandlerType<T> = {
+  success: false;
+  data: T;
+  error: string;
+};

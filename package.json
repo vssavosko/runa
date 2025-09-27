@@ -1,0 +1,57 @@
+{
+  "name": "runa",
+  "description": "Multi-agent end-to-end testing workflow powered by Mastra. Plans scenarios, executes via Playwright MCP, and posts a rich report back to the pull request.",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "scripts": {
+    "dev": "mastra dev",
+    "build": "mastra build",
+    "build:ci": "tsc",
+    "start": "mastra start",
+    "start:runa": "node ./dist/index.js",
+    "find-pull-request": "node ./dist/scripts/find-pull-request.js",
+    "lint": "biome check src",
+    "lint:fix": "biome check --write src",
+    "format": "biome format --write src",
+    "format:check": "biome format src"
+  },
+  "keywords": [
+    "agentic-ai",
+    "e2e-testing",
+    "github-actions",
+    "llm",
+    "mastra",
+    "mcp",
+    "multi-agent",
+    "playwright",
+    "pull-request",
+    "test-automation",
+    "typescript"
+  ],
+  "author": "Vladislav Savosko <vssavosko@gmail.com>",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.23",
+    "@ai-sdk/google": "^2.0.17",
+    "@ai-sdk/huggingface": "^0.0.1",
+    "@ai-sdk/openai": "^2.0.42",
+    "@mastra/core": "^0.20.0",
+    "@mastra/loggers": "^0.10.15",
+    "@mastra/mcp": "^0.13.3",
+    "@mastra/memory": "^0.15.5",
+    "@openrouter/ai-sdk-provider": "^1.2.0",
+    "octokit": "^5.0.3",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.5",
+    "@octokit/types": "^15.0.0",
+    "@types/node": "^24.7.0",
+    "mastra": "^0.14.1",
+    "typescript": "^5.9.3"
+  }
+}
