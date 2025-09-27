@@ -1,0 +1,120 @@
+---
+description: This rule enforces best practices and coding standards for building AI agents and workflows with the Mastra framework. It provides actionable, opinionated guidance across agents, tools, memory, workflows, RAG, evals, deployment, and observability.
+alwaysApply: true
+---
+
+- **Agent Design Best Practices**
+
+  - Favor declarative `createAgent` definitions with explicit `tools`, `memory`, and `model` keys.
+  - Use **threaded** or **semantic** memory depending on recall needs; prefer `semantic` for RAG or complex context reuse.
+  - Assign clear and unique `systemPrompt` values; avoid hardcoding logic into prompt instructions.
+  - Reuse `tools` across agents where possible via shared modules.
+
+- **Tool & MCP Best Practices**
+
+  - Always define input/output types for tools to enable type safety and better LLM reasoning.
+  - Keep tool responsibilities single-purpose; avoid tools that perform more than one semantic task.
+  - Use `MCPServer` when tools need to run as external RPC services for scaling or performance.
+  - Stream tool responses using `yield` or observables when returning multi-turn or long-form output.
+
+- **Memory Architecture & Use**
+
+  - Prefer working memory for single-turn logic, semantic memory for knowledge retention.
+  - Use memory processors to transform/store content with metadata (e.g., speaker, source, confidence).
+  - Avoid storing sensitive user data directly; apply redaction or encryption layers as needed.
+  - For threaded agents, ensure each message includes a consistent `threadId`.
+
+- **Workflow Modeling**
+
+  - Use `workflow()` builder API to model tasks as `.then()`, `.branch()`, `.parallel()` steps.
+  - Use `.branch(condition, ifTrue, ifFalse)` for conditional logic; avoid nesting raw `if/else` inside steps.
+  - Split large workflows into modules and reuse via imports to improve readability.
+  - Use `.suspend()` and `.resume()` for human-in-the-loop or long-polling workflows.
+
+- **Streaming & Events**
+
+  - Implement `event.emit()` and `workflow.on("eventName", handler)` for agent interop and real-time UX.
+  - Use streaming in tools for progressive responses (e.g., token-by-token streaming for LLMs).
+  - Always handle partial data in UIs listening to streamed agent output.
+
+- **RAG (Retrieval-Augmented Generation)**
+
+  - Chunk sources using semantic or structural delimiters (Markdown, HTML, JSON).
+  - Use `createVectorQueryTool` with clear `embeddingProvider`, `vectorStore`, and `filter` options.
+  - Chain `.retrieve()` and `.rerank()` for hybrid search and answer quality.
+  - Limit `topK` to 3–5 results and apply rerankers like `cohere`, `zeroentropy`, or custom scoring.
+
+- **Evals & Scoring**
+
+  - Run `textualEvals` during CI to measure agent regressions (faithfulness, bias, hallucination, etc.).
+  - Compose multiple scorers (e.g., `Answer Relevancy`, `Tone Consistency`) to build robust quality gates.
+  - Build `customEvals` via reusable functions for your domain (e.g., fintech, healthcare, education).
+  - Always use `groundTruth` comparisons when available.
+
+- **Deployment & Server Integration**
+
+  - Use `mastra.config.ts` for centralized agent/workflow definitions.
+  - Integrate with web frameworks (Next.js, Vite, SvelteKit) using `@mastra/server` or Vercel AI SDK.
+  - Use `MCPServer` for hosting tools on Express or API routes for cloud/serverless environments.
+  - Snapshot workflows to persist state between cold starts.
+
+- **Observability & Logging**
+
+  - Enable `logging`, `tracing`, and `metrics` in production for debugging and insight.
+  - Use `observability.emit()` for custom events.
+  - Use AI trace explorer or integrate with OpenTelemetry for distributed tracing.
+  - Tag agent outputs with `sessionId`, `userId`, `taskId` for better analysis.
+
+- **Security and Compliance**
+
+  - Avoid leaking private memory content; redact sensitive info using memory processors.
+  - Secure MCP routes with auth middleware (JWT, Clerk, Supabase, etc.).
+  - Store secrets (e.g., model API keys, DB URIs) in environment variables.
+  - Validate tool input/output against schemas to prevent injection attacks.
+
+- **Testing, Evals, and CI Integration**
+
+  - Use `@mastra/test` for unit/integration tests on agents and workflows.
+  - Write evals for every new agent feature or memory change.
+  - Integrate test suite in CI (e.g., GitHub Actions) with `mastra test` and snapshot diffing.
+  - Mock external tool APIs for faster testing.
+
+- **Common Anti-patterns**
+
+  - Avoid embedding decision logic into prompts — use workflows and code branches instead.
+  - Don’t call tools from inside a model prompt; use structured tool calls instead.
+  - Avoid deep nesting in workflows; prefer flattening into logical steps and branches.
+  - Don’t persist memory without filtering — use memory processors or redactors.
+
+- **Directory Structure & Code Organization**
+
+  - Suggested structure:
+
+    ```
+    /src
+      /agents
+      /workflows
+      /tools
+      /memory
+      /config
+      /types
+      /server
+    ```
+
+  - Use `index.ts` files to re-export modules and group logic.
+  - Group related tools and workflows together under the same feature domain.
+
+- **Dev Playground Tips**
+
+  - Use local dev playground to:
+    - Simulate agent runs with real input
+    - Inspect memory state
+    - Visualize workflow graphs
+    - Stream tool output
+  - Don’t use playground as prod — it’s for debugging only.
+
+- **Versioning & Compatibility**
+
+  - Always pin `mastra` version in `package.json` to avoid breaking updates.
+  - Watch for experimental features marked in docs (e.g., `exp.`, `voice`, `networks`).
+  - Use feature flags when rolling out major agent changes.
