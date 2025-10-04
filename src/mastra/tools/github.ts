@@ -1,32 +1,33 @@
 import { Octokit } from "octokit";
-import { z } from "zod";
+
+import {
+  getPullRequestFilesOutputSchema,
+  getPullRequestInfoOutputSchema,
+  pullRequestIdentifierSchema,
+  upsertPullRequestCommentOutputSchema,
+} from "./schemas/github-schemas.js";
 
 import type {
   IssueCommentType,
   PullRequestDataType,
   PullRequestFileType,
-} from "./types";
+} from "./types.js";
 
 const octokit = new Octokit({ auth: process.env["GITHUB_ACCESS_TOKEN"] || "" });
 
-const validatePrParams = (
-  repoFullName: PullRequestDataType["repoFullName"],
-  prNumber: PullRequestDataType["prNumber"],
-  body?: PullRequestDataType["body"],
+const validatePullRequestParams = (
+  repositoryFullName: PullRequestDataType["repositoryFullName"],
+  pullRequestNumber: PullRequestDataType["pullRequestNumber"],
 ): void => {
-  if (!repoFullName || !prNumber) {
+  if (!repositoryFullName || !pullRequestNumber) {
     throw new Error(
-      `Missing required parameters: repoFullName: ${repoFullName}, prNumber: ${prNumber}`,
+      `Missing required parameters: repositoryFullName: ${repositoryFullName}, pullRequestNumber: ${pullRequestNumber}`,
     );
-  }
-
-  if (body !== undefined && !body) {
-    throw new Error(`Missing required parameter: body`);
   }
 };
 
 const parseRepository = (
-  repoFullName: PullRequestDataType["repoFullName"],
+  repoFullName: PullRequestDataType["repositoryFullName"],
 ): { owner: string; repo: string } => {
   const [owner, repo] = repoFullName.split("/");
 
@@ -52,49 +53,37 @@ const handleApiError = <T>(
 /**
  * Tool for getting pull request information
  */
-export const getPrInfo = {
-  id: "get-pr-info",
+export const getPullRequestInfo = {
+  id: "get-pull-request-info",
   description: "Gets information about a GitHub pull request",
-  inputSchema: z.object({
-    repoFullName: z.string().describe("Repository name in format owner/repo"),
-    prNumber: z.number().describe("Pull request number"),
-  }),
-  outputSchema: z.object({
-    success: z.boolean().describe("Whether the request was successful"),
-    data: z
-      .object({
-        url: z.string().nullable().describe("Pull request URL"),
-        title: z.string().nullable().describe("Pull request title"),
-        body: z.string().nullable().describe("Pull request description"),
-      })
-      .describe("Pull request data"),
-    error: z.string().nullable().describe("Error message if request failed"),
-  }),
-  execute: async (inputData: { context: PullRequestDataType }) => {
-    const { repoFullName, prNumber } = inputData.context;
-
-    validatePrParams(repoFullName, prNumber);
+  inputSchema: pullRequestIdentifierSchema,
+  outputSchema: getPullRequestInfoOutputSchema,
+  execute: async ({
+    repositoryFullName,
+    pullRequestNumber,
+  }: PullRequestDataType) => {
+    validatePullRequestParams(repositoryFullName, pullRequestNumber);
 
     try {
-      const { owner, repo } = parseRepository(repoFullName);
+      const { owner, repo } = parseRepository(repositoryFullName);
 
-      const { data: prData } = await octokit.rest.pulls.get({
+      const { data: pullRequestData } = await octokit.rest.pulls.get({
         owner,
         repo,
-        pull_number: prNumber,
+        pull_number: pullRequestNumber,
       });
 
       return {
         success: true,
         data: {
-          url: prData.html_url ?? null,
-          title: prData.title ?? null,
-          body: prData.body ?? null,
+          url: pullRequestData.html_url,
+          title: pullRequestData.title,
+          body: pullRequestData.body,
         },
         error: null,
       };
     } catch (error: unknown) {
-      return handleApiError(error, "get PR info", {
+      return handleApiError(error, "get pull request info", {
         url: null,
         title: null,
         body: null,
@@ -104,32 +93,26 @@ export const getPrInfo = {
 };
 
 /**
- * Tool for listing changed files in a PR
+ * Tool for listing changed files in a pull request
  */
-export const getPrFiles = {
-  id: "get-pr-files",
+export const getPullRequestFiles = {
+  id: "get-pull-request-files",
   description: "Lists changed files for a GitHub pull request",
-  inputSchema: z.object({
-    repoFullName: z.string().describe("Repository name in format owner/repo"),
-    prNumber: z.number().describe("Pull request number"),
-  }),
-  outputSchema: z.object({
-    success: z.boolean().describe("Whether the request was successful"),
-    data: z.array(z.string()).describe("Array of changed file paths"),
-    error: z.string().nullable().describe("Error message if request failed"),
-  }),
-  execute: async (inputData: { context: PullRequestDataType }) => {
-    const { repoFullName, prNumber } = inputData.context;
-
-    validatePrParams(repoFullName, prNumber);
+  inputSchema: pullRequestIdentifierSchema,
+  outputSchema: getPullRequestFilesOutputSchema,
+  execute: async ({
+    repositoryFullName,
+    pullRequestNumber,
+  }: PullRequestDataType) => {
+    validatePullRequestParams(repositoryFullName, pullRequestNumber);
 
     try {
-      const { owner, repo } = parseRepository(repoFullName);
+      const { owner, repo } = parseRepository(repositoryFullName);
 
       const files = await octokit.paginate(octokit.rest.pulls.listFiles, {
         owner,
         repo,
-        pull_number: prNumber,
+        pull_number: pullRequestNumber,
         per_page: 100,
       });
 
@@ -137,47 +120,45 @@ export const getPrFiles = {
 
       return { success: true, data: fileNames, error: null };
     } catch (error: unknown) {
-      return handleApiError(error, "get PR files", []);
+      return handleApiError(error, "get pull request files", []);
     }
   },
 };
 
 /**
- * Tool for upserting a PR comment by the current authenticated user (create or update)
+ * Tool for upserting a pull request comment by the current authenticated user (create or update)
  */
-export const upsertPrComment = {
-  id: "upsert-pr-comment",
+export const upsertPullRequestComment = {
+  id: "upsert-pull-request-comment",
   description:
-    "Creates or updates a report PR comment authored by the current authenticated user (bot/account)",
-  inputSchema: z.object({
-    repoFullName: z.string().describe("Repository name in format owner/repo"),
-    prNumber: z.number().describe("Pull request number"),
-    body: z.string().describe("Comment body in markdown format"),
-  }),
-  outputSchema: z.object({
-    success: z
-      .boolean()
-      .describe("Whether the comment was created/updated successfully"),
-    data: z.string().describe("URL of the upserted comment"),
-    error: z.string().nullable().describe("Error message if operation failed"),
-  }),
-  execute: async (inputData: { context: PullRequestDataType }) => {
-    const { repoFullName, prNumber, body } = inputData.context;
-
-    validatePrParams(repoFullName, prNumber, body);
+    "Creates or updates a report pull request comment authored by the current authenticated user (bot/account)",
+  inputSchema: pullRequestIdentifierSchema,
+  outputSchema: upsertPullRequestCommentOutputSchema,
+  execute: async ({
+    repositoryFullName,
+    pullRequestNumber,
+    body,
+  }: PullRequestDataType) => {
+    validatePullRequestParams(repositoryFullName, pullRequestNumber);
 
     try {
-      const { owner, repo } = parseRepository(repoFullName);
+      const { owner, repo } = parseRepository(repositoryFullName);
 
       const { data: user } = await octokit.rest.users.getAuthenticated();
+
       const currentLogin = user.login;
+
+      console.log(
+        `[upsertPrComment] Authenticated as: ${JSON.stringify(user)}`,
+      );
+      console.log(`[upsertPrComment] Authenticated as: ${currentLogin}`);
 
       const comments = await octokit.paginate(
         octokit.rest.issues.listComments,
         {
           owner,
           repo,
-          issue_number: prNumber,
+          issue_number: pullRequestNumber,
           per_page: 100,
         },
       );
@@ -203,7 +184,7 @@ export const upsertPrComment = {
         const { data: result } = await octokit.rest.issues.createComment({
           owner,
           repo,
-          issue_number: prNumber,
+          issue_number: pullRequestNumber,
           body,
         });
 
@@ -214,7 +195,7 @@ export const upsertPrComment = {
         };
       }
     } catch (error: unknown) {
-      return handleApiError(error, "upsert PR comment", "");
+      return handleApiError(error, "upsert pull request comment", "");
     }
   },
 };

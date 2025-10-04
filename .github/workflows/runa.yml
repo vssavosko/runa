@@ -9,9 +9,15 @@ on:
         required: false
       APP_PRIVATE_KEY:
         required: false
+      OPENAI_API_KEY:
+        required: false
+      ANTHROPIC_API_KEY:
+        required: false
+      GOOGLE_API_KEY:
+        required: false
       OPENROUTER_API_KEY:
         required: false
-      OPENAI_API_KEY:
+      HUGGINGFACE_API_KEY:
         required: false
       MODEL_NAME:
         required: true
@@ -29,6 +35,7 @@ jobs:
   run:
     runs-on: ubuntu-latest
     env:
+      GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
     steps:
@@ -67,11 +74,14 @@ jobs:
           app-id: ${{ env.APP_ID }}
           private-key: ${{ env.APP_PRIVATE_KEY }}
 
+      - name: Set GitHub App token (optional)
+        if: ${{ steps.app.outputs.token != '' }}
+        run: echo "GITHUB_ACCESS_TOKEN=${{ steps.app.outputs.token }}" >> $GITHUB_ENV
+
       - name: Find Pull Request
         id: find-pull-request
         working-directory: runa
         env:
-          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           INPUT_REF: ${{ github.ref }}
         run: pnpm find-pull-request
@@ -79,8 +89,11 @@ jobs:
       - name: Start Runa
         working-directory: runa
         env:
-          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
           MODEL_NAME: ${{ secrets.MODEL_NAME }}
-          PR_LINK: ${{ steps.find-pull-request.outputs.link }}
+          PULL_REQUEST_LINK: ${{ steps.find-pull-request.outputs.link }}
         run: pnpm start:runa

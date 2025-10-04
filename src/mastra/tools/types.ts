@@ -7,8 +7,8 @@ export type IssueCommentType =
   Endpoints["GET /repos/{owner}/{repo}/issues/{issue_number}/comments"]["response"]["data"][0];
 
 export type PullRequestDataType = {
-  repoFullName: string;
-  prNumber: number;
+  repositoryFullName: string;
+  pullRequestNumber: number;
 
   body?: string;
 };

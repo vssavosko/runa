@@ -46,8 +46,8 @@ const extractBranch = (ref: string): string => {
   return branch;
 };
 
-const writeOutput = (outputPath: string, pr: PullRequest): void => {
-  const output = `number=${pr.number}\nlink=${pr.html_url}\n`;
+const writeOutput = (outputPath: string, pullRequest: PullRequest): void => {
+  const output = `number=${pullRequest.number}\nlink=${pullRequest.html_url}\n`;
 
   writeFileSync(outputPath, output, { flag: "a" });
 };
@@ -82,15 +82,15 @@ const findPullRequestByBranchSearch = async (
     per_page: 100,
   });
 
-  const pr = pulls.find((p: PullRequest) => p.head?.ref === branch);
+  const pullRequest = pulls.find((p: PullRequest) => p.head?.ref === branch);
 
-  if (!pr) {
+  if (!pullRequest) {
     throw new Error(
-      `No open PR found for branch '${branch}'. If this is a fork, ensure an open PR exists.`,
+      `No open pull request found for branch '${branch}'. If this is a fork, ensure an open pull request exists.`,
     );
   }
 
-  return pr;
+  return pullRequest;
 };
 
 const findPullRequest = async (): Promise<void> => {
@@ -101,17 +101,29 @@ const findPullRequest = async (): Promise<void> => {
 
     const octokit = new Octokit({ auth: config.token });
 
-    let pr = await findPullRequestByExactBranch(octokit, owner, name, branch);
+    let pullRequest = await findPullRequestByExactBranch(
+      octokit,
+      owner,
+      name,
+      branch,
+    );
 
-    if (!pr) {
-      pr = await findPullRequestByBranchSearch(octokit, owner, name, branch);
+    if (!pullRequest) {
+      pullRequest = await findPullRequestByBranchSearch(
+        octokit,
+        owner,
+        name,
+        branch,
+      );
     }
 
-    if (config.outputPath) writeOutput(config.outputPath, pr);
+    if (config.outputPath) writeOutput(config.outputPath, pullRequest);
 
-    console.log(`Found PR #${pr.number}: ${pr.title}`);
-  } catch (error) {
-    console.error("Error detecting PR:", error);
+    console.log(
+      `Found pull request #${pullRequest.number}: ${pullRequest.title}`,
+    );
+  } catch (error: unknown) {
+    console.error("Error finding pull request: ", error);
 
     process.exit(1);
   }

@@ -1,7 +1,7 @@
 import { Agent } from "@mastra/core/agent";
 
 import { mcp } from "../mcp.js";
-import { openrouter } from "../providers/openrouter.js";
+import { getModel } from "../utils/get-model.js";
 
 const mcpTools = await mcp.getTools();
 
@@ -34,13 +34,12 @@ export const playwrightAgent = new Agent({
       * passed - number of tests that passed successfully
       * failed - number of tests that failed
       * flaky - list of test names that were unstable (passed sometimes, failed sometimes)
-      * durationMs - total execution time in milliseconds
       * artifacts - object containing urls array with links to screenshots, videos, or other files
       * failures - list of failed tests, each with name and reason for failure
 
     CLEANUP AND FINALIZATION
     - Close browser once after all tests complete using playwright_browser_close.
   `,
-  model: openrouter(process.env["MODEL_NAME"] || ""),
+  model: getModel(),
   tools: { ...mcpTools },
 });

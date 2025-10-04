@@ -1,10 +1,12 @@
 import { mastra } from "./mastra/index.js";
 import { mcp } from "./mastra/mcp.js";
 
-const processRuna = async (prLink: string): Promise<boolean> => {
+const runWorkflow = async (pullRequestLink: string): Promise<boolean> => {
   const logger = mastra.getLogger();
 
-  logger.info(`🚀 Starting automation-test-workflow for PR: ${prLink}`);
+  logger.info(
+    `🚀 Starting automation-test-workflow for a pull request: ${pullRequestLink}`,
+  );
 
   try {
     const workflow = mastra.getWorkflow("automationTestWorkflow");
@@ -17,7 +19,7 @@ const processRuna = async (prLink: string): Promise<boolean> => {
 
     logger.info("⚡ Starting workflow execution...");
 
-    const result = await run.start({ inputData: { prLink } });
+    const result = await run.start({ inputData: { pullRequestLink } });
 
     if (result.status === "success") {
       logger.info("✅ automation-test-workflow completed successfully!");
@@ -37,19 +39,30 @@ const processRuna = async (prLink: string): Promise<boolean> => {
   }
 };
 
-(async () => {
-  const prLink = process.env["PR_LINK"];
+const cleanup = async () => {
+  try {
+    await mcp.disconnect();
+    await mastra.stopEventEngine();
+    await mastra.shutdown();
+  } catch (error: unknown) {
+    console.error("❌ Error during cleanup: ", error);
+  }
+};
 
-  if (!prLink) {
-    console.error("❌ PR_LINK environment variable is required");
+(async () => {
+  const pullRequestLink = process.env["PULL_REQUEST_LINK"];
+
+  if (!pullRequestLink) {
+    console.error("❌ PULL_REQUEST_LINK environment variable is required");
+
+    await cleanup();
 
     process.exit(1);
   }
 
-  const success = await processRuna(prLink);
+  const success = await runWorkflow(pullRequestLink);
 
-  await mcp.disconnect();
-  await mastra.shutdown();
+  await cleanup();
 
   process.exit(success ? 0 : 1);
 })();
