@@ -4,7 +4,7 @@ export const mcp = new MCPClient({
   servers: {
     playwright: {
       command: "pnpm",
-      args: ["dlx", "@playwright/mcp@latest", "--headless", "--isolated"],
+      args: ["dlx", "@playwright/mcp@latest", "--headless"],
     },
   },
 });

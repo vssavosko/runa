@@ -1,5 +1,6 @@
 import { createStep } from "@mastra/core/workflows";
 
+import { getModel } from "../../../utils/get-model.js";
 import {
   fetchStepOutputSchema,
   planStepOutputSchema,
@@ -9,7 +10,7 @@ import {
 export const planStep = createStep({
   id: "plan-step",
   description:
-    "Generates a detailed and structured test plan for verifying new functionality or changes, including scenarios, steps, and expected results",
+    "Uses the planner-agent to generate detailed and structured E2E test scenarios based on Pull Request information, preparing them for further execution.",
   inputSchema: fetchStepOutputSchema,
   outputSchema: planStepOutputSchema,
   execute: async ({ inputData, mastra }) => {
@@ -20,7 +21,7 @@ export const planStep = createStep({
     } = inputData;
 
     const prompt = `
-        Use the following pull request information to generate a concise, actionable E2E test plan.
+        Use the following information to generate E2E test scenarios.
   
         Pull Request Link: ${repositoryFullName}/pull/${pullRequestNumber}
         Pull Request Title: ${title}
@@ -36,13 +37,17 @@ export const planStep = createStep({
       {
         structuredOutput: {
           schema: scenariosSchema,
+          model: getModel(
+            process.env["MODEL_NAME_FOR_STRUCTURED_OUTPUT"] || "",
+          ),
           errorStrategy: "strict",
         },
+        modelSettings: {
+          temperature: 0.3,
+        },
         providerOptions: {
-          openai: {
-            temperature: 0.4,
+          openrouter: {
             reasoning: {
-              enabled: true,
               max_tokens: 8000,
             },
           },

@@ -1,5 +1,6 @@
 import { createStep } from "@mastra/core/workflows";
 
+import { getModel } from "../../../utils/get-model.js";
 import {
   planStepOutputSchema,
   testResultSchema,
@@ -9,7 +10,7 @@ import {
 export const testStep = createStep({
   id: "test-step",
   description:
-    "Executes the end-to-end test scenarios defined in the test plan, collects results, and gathers artifacts",
+    "Uses the playwright-agent to execute E2E test scenarios defined by the planner-agent, collecting execution results and artifacts into a structured report.",
   inputSchema: planStepOutputSchema,
   outputSchema: testStepOutputSchema,
   execute: async ({ inputData, mastra }) => {
@@ -27,35 +28,20 @@ export const testStep = createStep({
     console.log("─".repeat(60));
 
     const prompt = `
-      You are provided with a test plan for E2E testing of an application.
-      Your task is to execute ALL scenarios sequentially, one by one.
+      Use the following information to execute E2E test scenarios.
 
-      EXECUTION STRATEGY:
-      - Execute each scenario in order, one at a time.
-      - For EACH scenario: launch browser → execute steps → close browser.
-      - This ensures clean state between scenarios.
-      - Do NOT run scenarios in parallel.
-
-      Test Plan:
+      Test Scenarios:
       ${scenarios
-        .map(
-          (scenario, idx) => `
-      ${idx + 1}. Name: ${scenario.name}
-      Steps:
-      ${scenario.steps.map((step, stepIdx) => `   ${stepIdx + 1}) ${step}`).join("\n")}
-      Expected result: ${scenario.expectedResult}
-      Tags: ${scenario.tags.join(", ")}
-      `,
-        )
+        .map((scenario, idx) => {
+          return `
+            ${idx + 1}. Name: ${scenario.name}
+            Steps:
+            ${scenario.steps.map((step, stepIdx) => `   ${stepIdx + 1}) ${step}`).join("\n")}
+            Expected result: ${scenario.expectedResult}
+            Tags: ${scenario.tags.join(", ")}
+          `;
+        })
         .join("\n")}
-
-      REQUIREMENTS:
-      - Do not fabricate results: if a test cannot be executed, specify it in failures.
-      - If a scenario is flaky, add its name to the flaky array.
-      - For each failed test, specify the reason in failures.
-      - If there are artifacts (screenshots, videos), add their links to artifacts.urls.
-      - Return results with: passed, failed, flaky[], artifacts.urls[], failures[].
-      - Close browser between scenarios for clean state.
     `;
 
     const playwrightAgent = mastra.getAgent("playwrightAgent");
@@ -72,15 +58,10 @@ export const testStep = createStep({
       {
         structuredOutput: {
           schema: testResultSchema,
+          model: getModel(
+            process.env["MODEL_NAME_FOR_STRUCTURED_OUTPUT"] || "",
+          ),
           errorStrategy: "strict",
-        },
-        providerOptions: {
-          openai: {
-            reasoning: {
-              enabled: true,
-              max_tokens: 2000,
-            },
-          },
         },
         maxSteps,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,7 +105,7 @@ export const testStep = createStep({
     return {
       repositoryFullName,
       pullRequestNumber,
-      data: object,
+      data: { ...object, scenarios },
     };
   },
 });

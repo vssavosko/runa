@@ -50,9 +50,6 @@ const handleApiError = <T>(
   };
 };
 
-/**
- * Tool for getting pull request information
- */
 export const getPullRequestInfo = {
   id: "get-pull-request-info",
   description: "Gets information about a GitHub pull request",
@@ -78,7 +75,7 @@ export const getPullRequestInfo = {
         data: {
           url: pullRequestData.html_url,
           title: pullRequestData.title,
-          body: pullRequestData.body,
+          body: pullRequestData.body || "",
         },
         error: null,
       };
@@ -92,9 +89,6 @@ export const getPullRequestInfo = {
   },
 };
 
-/**
- * Tool for listing changed files in a pull request
- */
 export const getPullRequestFiles = {
   id: "get-pull-request-files",
   description: "Lists changed files for a GitHub pull request",
@@ -125,9 +119,6 @@ export const getPullRequestFiles = {
   },
 };
 
-/**
- * Tool for upserting a pull request comment by the current authenticated user (create or update)
- */
 export const upsertPullRequestComment = {
   id: "upsert-pull-request-comment",
   description:
@@ -144,15 +135,6 @@ export const upsertPullRequestComment = {
     try {
       const { owner, repo } = parseRepository(repositoryFullName);
 
-      const { data: user } = await octokit.rest.users.getAuthenticated();
-
-      const currentLogin = user.login;
-
-      console.log(
-        `[upsertPrComment] Authenticated as: ${JSON.stringify(user)}`,
-      );
-      console.log(`[upsertPrComment] Authenticated as: ${currentLogin}`);
-
       const comments = await octokit.paginate(
         octokit.rest.issues.listComments,
         {
@@ -163,8 +145,8 @@ export const upsertPullRequestComment = {
         },
       );
 
-      const existingComment = comments.find(
-        (comment: IssueCommentType) => comment.user?.login === currentLogin,
+      const existingComment = comments.find((comment: IssueCommentType) =>
+        comment.body?.includes("<!-- RUNA-REPORT -->"),
       );
 
       if (existingComment) {
@@ -172,7 +154,7 @@ export const upsertPullRequestComment = {
           owner,
           repo,
           comment_id: existingComment.id,
-          body,
+          body: body || "",
         });
 
         return {
@@ -185,7 +167,7 @@ export const upsertPullRequestComment = {
           owner,
           repo,
           issue_number: pullRequestNumber,
-          body,
+          body: body || "",
         });
 
         return {

@@ -8,10 +8,10 @@ import { openrouter } from "../providers/openrouter.js";
 import { getProvider } from "./get-provider.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const getModel = (): any => {
+export const getModel = (model = ""): any => {
   const provider = getProvider();
 
-  const modelName = process.env["MODEL_NAME"] || "";
+  const modelName = model || process.env["MODEL_NAME"] || "";
 
   switch (provider) {
     case "openai":

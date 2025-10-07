@@ -67,9 +67,14 @@ export const testStepOutputSchema = z.object({
     .string()
     .describe("Repository name in format owner/repo"),
   pullRequestNumber: z.number().describe("Pull request number"),
-  data: testResultSchema.describe(
-    "Results of end-to-end test execution, including statistics, artifacts, and details of any failures or flaky scenarios",
-  ),
+  data: z
+    .object({
+      ...testResultSchema.shape,
+      ...scenariosSchema.shape,
+    })
+    .describe(
+      "Results of end-to-end test execution, including statistics, artifacts, tested scenarios, and details of any failures or flaky scenarios",
+    ),
 });
 
 export const reportStepOutputSchema = z.object({

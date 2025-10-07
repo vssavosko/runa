@@ -1,6 +1,5 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { createHuggingFace } from "@ai-sdk/huggingface";
 
-export const huggingface = createOpenAI({
+export const huggingface = createHuggingFace({
   apiKey: process.env["HUGGINGFACE_API_KEY"] ?? "",
-  baseURL: "https://api-inference.huggingface.co/v1",
 });

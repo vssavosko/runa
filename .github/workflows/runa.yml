@@ -21,6 +21,8 @@ on:
         required: false
       MODEL_NAME:
         required: true
+      MODEL_NAME_FOR_STRUCTURED_OUTPUT:
+        required: false
 
 permissions:
   contents: read
@@ -95,5 +97,6 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
           MODEL_NAME: ${{ secrets.MODEL_NAME }}
+          MODEL_NAME_FOR_STRUCTURED_OUTPUT: ${{ secrets.MODEL_NAME_FOR_STRUCTURED_OUTPUT }}
           PULL_REQUEST_LINK: ${{ steps.find-pull-request.outputs.link }}
         run: pnpm start:runa

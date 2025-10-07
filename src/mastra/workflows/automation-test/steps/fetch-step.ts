@@ -45,8 +45,17 @@ export const fetchStep = createStep({
     }
 
     const { url, title, body } = info.data;
-    const urlMatch = body.match(/https?:\/\/\S+/i); // TODO: improve
-    const testUrl = urlMatch ? urlMatch[0] : "";
+
+    const labeledUrlMatch = body.match(
+      /test\s*url\s*:\s*(?:\n\s*)?(https?:\/\/\S+)/i,
+    );
+    const rawTestUrl = (labeledUrlMatch?.[1] || "").trim();
+    const testUrl = rawTestUrl.replace(/[)\],>.;'"`]+$/g, "");
+
+    if (!testUrl)
+      throw new Error(
+        `Failed to get test url from pull request body. Use "Test URL:" label in the pull request body to specify the test url. Example: "Test URL: https://example.com"`,
+      );
 
     return {
       repositoryFullName,
