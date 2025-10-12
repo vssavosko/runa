@@ -7,6 +7,7 @@ import {
   planStepOutputSchema,
   testStepOutputSchema,
 } from "../schemas/step-schemas.js";
+import type { ScenarioTestResultsType } from "../types.js";
 import { combineTestResults } from "../utils/combine-test-results.js";
 import { generatePromptForScenario } from "../utils/generate-prompt-for-scenario.js";
 
@@ -27,7 +28,7 @@ export const testStep = createStep({
     logger.info(`[test-step] 📊 Total scenarios: ${scenarios.length}`);
     logger.info("─".repeat(60));
 
-    const results = [];
+    const results: ScenarioTestResultsType[] = [];
 
     for (let i = 0; i < scenarios.length; i++) {
       const scenario = scenarios[i];
@@ -63,7 +64,7 @@ export const testStep = createStep({
 
         // use delay to avoid rate limiting
         if (i < scenarios.length - 1) {
-          await delay(Number(process.env["DELAY_BETWEEN_SCENARIOS"]));
+          await delay(Number(process.env["DELAY_BETWEEN_SCENARIOS"] || 45000));
         }
       } catch (error: unknown) {
         logger.error(`[test-step] ❌ Scenario ${i + 1} failed:`, error);

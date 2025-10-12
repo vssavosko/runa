@@ -39,24 +39,24 @@ permissions:
 jobs:
   run:
     uses: vssavosko/runa/.github/workflows/runa.yml@main
-    secrets:
+    with:
       # Required
-      GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }} # or a GitHub App token / PAT
       MODEL_NAME: gpt-4o-mini # depends on the chosen provider
 
-      # Provide at least one provider API key
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      # Optional
+      MODEL_NAME_FOR_STRUCTURED_OUTPUT: gpt-4o-mini # model used for strict structured output
+      MAX_NUMBER_OF_SCENARIOS: 3 # number of test scenarios. Default is 3
+      DELAY_BETWEEN_SCENARIOS: 45000 # delay between scenarios (ms). Default is 45000
+    secrets:
+      # Required
+      GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} # provide at least one provider API key
       # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       # GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       # OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       # HUGGINGFACE_API_KEY: ${{ secrets.HUGGINGFACE_API_KEY }}
 
-      # Optional
-      MODEL_NAME_FOR_STRUCTURED_OUTPUT: gpt-4o-mini # model used for strict structured output
-      MAX_NUMBER_OF_SCENARIOS: '3' # number of test scenarios. Default is 3
-      DELAY_BETWEEN_SCENARIOS: '45000' # delay between scenarios (ms). Default is 45000
-
-      # If using a GitHub App
+      # Optional. If using a GitHub App
       # APP_ID: ${{ secrets.APP_ID }}
       # APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
 ```

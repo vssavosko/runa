@@ -29,7 +29,7 @@ export const plannerAgent = new Agent({
 
     RULES:
 
-    - You may create 1 to ${process.env["MAX_NUMBER_OF_SCENARIOS"]} scenarios, focusing only on the most relevant test cases for adequate coverage.
+    - You may create 1 to ${process.env["MAX_NUMBER_OF_SCENARIOS"] || 3} scenarios, focusing only on the most relevant test cases for adequate coverage.
     - Use ONLY the tags: happy-path, edge-case, negative, error-handling, smoke, regression, sanity, critical, high, medium, low, wip, flaky, skip, mobile, desktop, api, ui.
     - Use 1 to 4 tags per scenario.
     - DO NOT repeat scenarios.
